@@ -1,2 +1,2 @@
-# R-portfolio
-A collection of scripts and notebooks in R :muscle:
+# R-portfolio :muscle:
+A collection of scripts and notebooks in R
