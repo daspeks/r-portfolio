@@ -1,31 +1,18 @@
 ---
 title: "R Notebook"
 output: html_notebook
+author: Parthasarathi Das
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
-
 ```{r}
-plot(cars)
-```
-
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
-
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
-
-```{r}
-# 1
+# 1 Create a sequence of numbers in R from 1 to 10 with an increment of 0.5
 object1 = seq(1, 10, by = 0.5)
 object2 = seq(1, 10, by = 0.5)
 object1
 object1[14]
 ```
 ```{r}
-# 2
+# 2 List all objects in the enviroment. Remove object2.
 ls()
 remove(object2)
 ```
@@ -63,10 +50,12 @@ plot(HeadWt, VitC, col='green', main='Scatter plot of cabbage head weights and t
 
 # c) Add a linear estimate of the relationship to the graph.
 abline(lm(VitC ~ HeadWt))
-
+```
+```{r}
 # d) Find the correlation between these two variables - Vitamin C content decreases with increasing Head weight
 cor(VitC,HeadWt)
 ```
+
 
 ```{r}
 # 8 Compute the frequency of values for Cult type
@@ -100,9 +89,9 @@ hist(cabbages$VitC, main='Histogram for Vitamin C', xlab='Vitamin C', border='bl
 # 10
 # a) Import the attached “ad.csv” file to R as an object called “data”, once using read.csv and once using fread. Add libraries if needed.
 library(data.table)
-data <- fread('./ad.csv')
+data <- fread('data/ad.csv')
 head(data)
-data <- read.csv(file = './ad.csv')
+data <- read.csv(file = 'data/ad.csv')
 head(data)
 
 # b) Create a simple linear regression model for sales using TV advertising variable. Does TV advertising impact sales? Predict the sales for when TV advertising is 75.
