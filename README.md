@@ -1,4 +1,4 @@
 # R Portfolio
-![](https://img.shields.io/github/repo-size/daspeks/R-portfolio)
+![](https://img.shields.io/github/repo-size/daspeks/r-portfolio)
 
 A collection of scripts and notebooks in R :sunglasses:
