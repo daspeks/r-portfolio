@@ -1,0 +1,100 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+# QUESTION 1 - The attached “CarEvals.csv” dataset includes data on conditions and evaluations of second hand cars.
+df = read.csv(file = 'data/CarEvals.csv')
+
+# a) Create a classification tree for classifying the “Class” variable based on other variables. Plot the tree.
+library(tree)
+library(rattle)
+library(rpart.plot)
+model = tree(Class ~., data = df)
+plot(model)
+
+# b) Create another tree using only a 1000 observations from the dataset, selected randomly. Predict the classes for the rest of the observations (719 observations).
+set.seed(123) # set the seed to make partition reproducible
+train_ind = sample(seq_len(nrow(df)), size = 1000)
+train = df[train_ind, ] # split into train and test
+test = df[-train_ind, ]
+model2 = tree(Class ~., data = train)
+predictTest = predict(model2, test, type="class")
+
+# c) Calculate the accuracy of the predictions and draw the confusion matrix.
+print(confusionMatrix(predictTest, test$Class))
+
+# d) Use cross-validation to find the best size of the tree. Plot the cross-validation error and the tuning parameter versus tree size. What is the best tree size?
+cv.car = cv.tree(model2, FUN = prune.misclass)
+plot(cv.car)
+
+# e) Prune the tree to the best size found in part d. Calculate the accuracy of the newly created model with the rest of the observations (719 observations).
+prune.cars = prune.misclass(model2, best=8)
+plot(prune.cars)
+tree.pred = predict(prune.cars, test, type="class")
+print(confusionMatrix(tree.pred, test$Class))
+```
+
+```{r}
+# QUESTION 2 - Use the “mtcars” dataset for this question. Only use columns 3 to 5 of the data
+df = mtcars[, 3:5]
+df = as.data.frame(scale(df))
+
+# a) Use K-means clustering to cluster the data. Use 20 starting points to find the best clusters. For the number of clusters, once use 3, and once use 4
+set.seed(2) # set for reproducible model
+km3 = kmeans(df, 3, nstart = 20)
+km4 = kmeans(df, 4, nstart = 20)
+
+# b) Plot the observations on all four dimensions, showing each cluster with a different color
+library(factoextra) # to visualize k-means clusters
+fviz_cluster(km3, data=df, geom="point", stand=FALSE, ellipse.type="norm") + theme_bw()
+fviz_cluster(km4, data=df, geom="point", stand=FALSE, ellipse.type="norm") + theme_bw()
+
+#plot (df, col=(km4$cluster), main = '', pch=19, cex=1)
+
+# c) Calculate the ratio of within-cluster errors to total errors for each cluster in the K=4 case. Plot the errors.
+wssplot = function(data, nc, seed=2) {
+  wss = (nrow(data) - 1) * sum(apply(data, 2, var))
+  for (i in 2:nc) {
+    set.seed(seed)
+    wss[i] = sum(kmeans(data, centers = i)$withinss)
+  }
+  t = sum(wss)
+  for (i in 1:nc) {
+    wss[i] = wss[i] / t
+  }
+  plot(1:nc, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares")
+}
+wssplot(df, nc=4) 
+
+
+# d) Use hierarchical clustering to cluster the data, using complete linkage. Plot the dendrogram. Cluster the data into 4 clusters.
+#dendrogram = hclust(d=dist(df, method='euclidean'), method='complete')
+dendrogram = hclust(d=dist(df), method='complete')
+plot(dendrogram, main = paste('Dendrogram'), xlab = 'Cars', ylab = 'Euclidean distances')
+rect.hclust(dendrogram, k=4, border=2:6)
+
+# e) Cluster the data using the dendrogram from previous part, and using a dissimilarity level of h=100. How many clusters does this clustering have?
+plot(dendrogram, main = paste('Dendrogram'), xlab = 'Cars', ylab = 'Euclidean distances')
+rect.hclust(dendrogram, h=100)
+```
+
+```{r}
+# QUESTION 3 - Use the included “Groceries” dataset (within the arules package) for this question
+library(arules)
+library(arulesViz)
+data(Groceries)
+
+# a) Use the Apriori algorithm to find the association rules with a minimum support of 0.02 and minimum confidence of 0.4
+rules <- apriori(Groceries, parameter = list(supp = 0.02, conf = 0.4))
+
+# b) Remove the redundant rules from your set of rules
+rules <- rules[!is.redundant(rules)]
+
+# c) Plot the rule performance measures based on support (on x axis) and confidence (on y axis) and lift (as shading)
+plot(rules, measure=c("support", "confidence"), shading="lift", interactive=FALSE)
+
+# d) Create the frequency plot of items with minimum support of 0.1
+itemFrequencyPlot(Groceries, supp=0.1)
+```
