@@ -1,0 +1,118 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+# 1. The attached “CarEvals.csv” dataset includes data on conditions and evaluations of second hand cars.
+  df = read.csv(file = 'data/CarEvals.csv')
+
+# a) Create a SVM classification model for classifying the “class” variable based on the other variables. Use a random sample of 1500 cars to create the SVM model. Use the radial kernel with cost=5 and scaled data.
+  train_ind = sample(seq_len(nrow(df)), size = 1500)
+  train = df[train_ind, ] # create train set
+  test = df[-train_ind, ] # create test set
+
+  require(e1071) # for svm()
+  RadialSvm = svm(factor(Class) ~ .,data = train, kernel = 'radial', cost = 5, scale = T)
+
+# b) Predict the classes for the remaining data (test set). Calculate the accuracy of the model and draw the confusion matrix.
+  predictTest = predict(RadialSvm, test, type="class")
+  print(confusionMatrix(predictTest, test$Class)) # requires caret package
+```
+
+```{r}
+# 2 Use the attached “TextData” dataset for this question.
+  df = read.csv(file = 'data/TextData.csv')
+
+
+# a) Remove white spaces, stopwords, and numbers from the documents. Make the text all lowercase, and then stem the text.
+  library(tm)
+  library(tidytext)
+  library(dplyr)
+
+  text_corpus = VCorpus(VectorSource(as.vector(df$text))) 
+  text_corpus = text_corpus%>%
+    tm_map(removePunctuation)%>%
+    tm_map(removeNumbers)%>%
+    tm_map(stripWhitespace)
+  text_corpus = text_corpus%>%
+    tm_map(content_transformer(tolower))%>%
+    tm_map(removeWords, stopwords("english"))
+  text_corpus = tm_map(text_corpus, stemDocument)
+
+# b) Create the document-term matrix. Find the frequent terms in all documents. Find highly associated terms (correlation more than 0.5) with two of the frequent terms (your choice).
+  dtm = DocumentTermMatrix(text_corpus)
+  word_counts = as.matrix(dtm)
+  word_freq = sort(colSums(word_counts), decreasing = TRUE)
+  head(word_freq)
+  findAssocs(dtm, c("cabl", "good"), c(0.51, 0.51))
+
+# c) Create a word cloud of the terms.
+  library(wordcloud)
+  library(proxy)
+  set.seed(1234)
+  wordcloud(words = names(word_freq), freq = word_freq, max.words = 200)
+
+# d) Cluster the terms using hierarchical clustering, with 5 clusters.
+  distMatrix = dist(word_counts, method = "euclidean")
+  groups = hclust(distMatrix, method = "ward.D")
+  plot(groups, cex=0.9, hang=-1)
+  rect.hclust(groups, k=5)
+
+# e) Cluster the documents using K-means clustering, with K=5.
+  km = kmeans(distMatrix, 5)
+  fviz_cluster(km, data = distMatrix)
+
+# f) Analyze the sentiment of all documents using the syuzhet package. Plot the sentiments as a bar plot.
+  library(syuzhet)
+  syuzhet_vector = get_sentiment(as.character(df$text), method="syuzhet")
+  barplot(syuzhet_vector, col='blue')
+```
+
+```{r}
+# 3 Use the included “Boston” dataset (within the MASS package) for this question.
+  library(MASS)
+  Boston
+
+# a) Create a neural network to predict the median value (medv) based on the rest of variables. Use a random set of 400 for training the neural network. Scale the data first. Plot the neural network.
+
+  # Scale
+  maxs = apply(Boston, 2, max) 
+  mins = apply(Boston, 2, min)
+  scaled = as.data.frame(scale(Boston, center = mins, scale = maxs - mins))
+  
+  # Split
+  index = sample(1:nrow(scaled), 400)
+  train = scaled[index, ]
+  test = scaled[-index, ]
+  
+  # NN
+  library(neuralnet)
+  n = names(train)
+  f = as.formula(paste("medv ~", paste(n[!n %in% "medv"], collapse = " + ")))
+  nn = neuralnet(f, data = train, hidden = c(5,3), linear.output = T)
+  
+  # Plot the NN
+  plot(nn)
+
+
+# b) Predict the median value for the rest of the data (106 in test set). What is the accuracy of the model in terms of MSE?
+  
+  # Predict
+  pr_nn = compute(nn, test[,1:13])
+
+  # Results from NN are normalized (scaled)
+  # Descaling for comparison
+  pr_nn = pr_nn$net.result * (max(Boston$medv) - min(Boston$medv)) + min(Boston$medv)
+  test_r = (test$medv) * (max(Boston$medv) - min(Boston$medv)) + min(Boston$medv)
+
+  # Calculating MSE
+  MSE_nn = sum((test_r - pr_nn)^2) / nrow(test)
+  MSE_nn
+
+  # Plot predictions
+  plot(Boston[-index, ]$medv, pr_nn, col='red', main='Real vs predicted NN', xlab='Real', ylab='Predicted', pch=18, cex=0.7)
+  abline(0, 1, lwd=2)
+  legend('bottomright', legend='NN', pch=18, col='red', bty='n')
+```
+
